@@ -1,15 +1,18 @@
 package com.eopeter.flutter_mapbox_navigation.activity
 
-import android.content.*
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.location.Location
 import android.os.Bundle
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.eopeter.flutter_mapbox_navigation.FlutterMapboxNavigationPlugin
 import com.eopeter.flutter_mapbox_navigation.models.MapBoxEvents
 import com.eopeter.flutter_mapbox_navigation.models.MapBoxRouteProgressEvent
 import com.eopeter.flutter_mapbox_navigation.utilities.PluginUtilities
 import com.eopeter.flutter_mapbox_navigation.utilities.PluginUtilities.Companion.sendEvent
-import com.mapbox.api.directions.v5.models.Bearing
 import com.mapbox.api.directions.v5.models.DirectionsRoute
 import com.mapbox.api.directions.v5.models.RouteOptions
 import com.mapbox.geojson.Point
@@ -20,22 +23,22 @@ import com.mapbox.maps.plugin.gestures.gestures
 import com.mapbox.navigation.base.extensions.applyDefaultNavigationOptions
 import com.mapbox.navigation.base.extensions.applyLanguageAndVoiceUnitOptions
 import com.mapbox.navigation.base.options.NavigationOptions
-import com.mapbox.navigation.base.route.*
+import com.mapbox.navigation.base.route.NavigationRoute
+import com.mapbox.navigation.base.route.NavigationRouterCallback
+import com.mapbox.navigation.base.route.RouterFailure
+import com.mapbox.navigation.base.route.RouterOrigin
 import com.mapbox.navigation.base.trip.model.RouteLegProgress
 import com.mapbox.navigation.base.trip.model.RouteProgress
-import com.mapbox.navigation.core.MapboxNavigation
 import com.mapbox.navigation.core.arrival.ArrivalObserver
 import com.mapbox.navigation.core.lifecycle.MapboxNavigationApp
 import com.mapbox.navigation.core.trip.session.LocationMatcherResult
 import com.mapbox.navigation.core.trip.session.LocationObserver
 import com.mapbox.navigation.core.trip.session.RouteProgressObserver
 import com.mapbox.navigation.dropin.map.MapViewObserver
-import com.mapbox.navigation.ui.app.internal.startArrival
-import com.mapbox.navigation.ui.tripprogress.model.*
 import com.mapbox.navigation.utils.internal.ifNonNull
 import eopeter.flutter_mapbox_navigation.R
 import eopeter.flutter_mapbox_navigation.databinding.NavigationActivityBinding
-import java.util.*
+
 
 class NavigationActivity : AppCompatActivity() {
 
@@ -45,7 +48,7 @@ class NavigationActivity : AppCompatActivity() {
     private var canResetRoute: Boolean = false
     private var accessToken: String? = null
     private var lastLocation: Location? = null
-
+    private val mapView: MapView? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setTheme(R.style.Theme_AppCompat_NoActionBar)
@@ -62,6 +65,7 @@ class NavigationActivity : AppCompatActivity() {
         MapboxNavigationApp
             .setup(navigationOptions)
             .attach(this)
+
 
         if (FlutterMapboxNavigationPlugin.allowsClickToSetDestination) {
             binding.navigationView.registerMapObserver(onMapLongClick)
@@ -117,14 +121,20 @@ class NavigationActivity : AppCompatActivity() {
         requestRoutes(points)
     }
 
+    override fun onBackPressed() {
+        super.finish()
+    }
+
+
     override fun onDestroy() {
         super.onDestroy()
-        if (FlutterMapboxNavigationPlugin.allowsClickToSetDestination) {
-            binding.navigationView.unregisterMapObserver(onMapLongClick)
-        }
-        MapboxNavigationApp.current()?.unregisterLocationObserver(locationObserver)
-        MapboxNavigationApp.current()?.unregisterRouteProgressObserver(routeProgressObserver)
-        MapboxNavigationApp.current()?.unregisterArrivalObserver(arrivalObserver)
+
+      //  if (FlutterMapboxNavigationPlugin.allowsClickToSetDestination) {
+      //      binding.navigationView.unregisterMapObserver(onMapLongClick)
+      //  }
+      //  MapboxNavigationApp.current()?.unregisterLocationObserver(locationObserver)
+      //  MapboxNavigationApp.current()?.unregisterRouteProgressObserver(routeProgressObserver)
+      //  MapboxNavigationApp.current()?.unregisterArrivalObserver(arrivalObserver)
     }
 
     override fun onStart() {
@@ -133,6 +143,7 @@ class NavigationActivity : AppCompatActivity() {
 
     override fun onStop() {
         super.onStop()
+        super.finish()
     }
 
     private fun requestRoutes(points: List<Point>) {
@@ -148,7 +159,10 @@ class NavigationActivity : AppCompatActivity() {
                 .build(),
             callback = object : NavigationRouterCallback {
                 override fun onCanceled(routeOptions: RouteOptions, routerOrigin: RouterOrigin) {
+
                     sendEvent(MapBoxEvents.ROUTE_BUILD_CANCELLED)
+
+
                 }
 
                 override fun onFailure(reasons: List<RouterFailure>, routeOptions: RouteOptions) {
@@ -226,6 +240,8 @@ class NavigationActivity : AppCompatActivity() {
                 }
 
                 override fun onCanceled(routeOptions: RouteOptions, routerOrigin: RouterOrigin) {
+                    Log.e("TEST","ON CANCELED")
+
                     sendEvent(MapBoxEvents.ROUTE_BUILD_CANCELLED)
                 }
             }

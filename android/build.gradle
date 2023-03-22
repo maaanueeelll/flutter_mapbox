@@ -80,20 +80,20 @@ android {
         jvmTarget = '1.8'
     }
 
-    buildFeatures{
+    buildFeatures {
         viewBinding = true
     }
 }
 
 dependencies {
     // Mapbox Navigation SDK
+    //implementation "com.mapbox.maps:android:10.8.1"
     implementation "com.mapbox.navigation:copilot:2.10.1"
     implementation "com.mapbox.navigation:ui-app:2.10.1"
     implementation "com.mapbox.navigation:ui-dropin:2.10.1"
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'com.jakewharton.timber:timber:4.7.1'
     implementation 'com.google.code.gson:gson:2.8.9'
-
     implementation "androidx.core:core-ktx:1.9.0"
     implementation "com.google.android.material:material:1.8.0"
     implementation "androidx.appcompat:appcompat:1.6.1"
@@ -106,4 +106,5 @@ dependencies {
     implementation 'androidx.annotation:annotation:1.6.0'
     implementation 'androidx.lifecycle:lifecycle-extensions:2.2.0'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
+
 }
