@@ -13,36 +13,15 @@ class SampleNavigationApp extends StatefulWidget {
 class _SampleNavigationAppState extends State<SampleNavigationApp> {
   String? _platformVersion;
   String? _instruction;
-  final _origin = WayPoint(
-      name: "Way Point 1",
-      latitude: 38.9111117447887,
-      longitude: -77.04012393951416);
-  final _stop1 = WayPoint(
-      name: "Way Point 2",
-      latitude: 38.91113678979344,
-      longitude: -77.03847169876099);
-  final _stop2 = WayPoint(
-      name: "Way Point 3",
-      latitude: 38.91040213277608,
-      longitude: -77.03848242759705);
-  final _stop3 = WayPoint(
-      name: "Way Point 4",
-      latitude: 38.909650771013034,
-      longitude: -77.03850388526917);
-  final _destination = WayPoint(
-      name: "Way Point 5",
-      latitude: 38.90894949285854,
-      longitude: -77.03651905059814);
+  final _origin = WayPoint(name: "Way Point 1", latitude: 38.9111117447887, longitude: -77.04012393951416);
+  final _stop1 = WayPoint(name: "Way Point 2", latitude: 38.91113678979344, longitude: -77.03847169876099);
+  final _stop2 = WayPoint(name: "Way Point 3", latitude: 38.91040213277608, longitude: -77.03848242759705);
+  final _stop3 = WayPoint(name: "Way Point 4", latitude: 38.909650771013034, longitude: -77.03850388526917);
+  final _destination = WayPoint(name: "Way Point 5", latitude: 38.90894949285854, longitude: -77.03651905059814);
 
-  final _home = WayPoint(
-      name: "Home",
-      latitude: 37.77440680146262,
-      longitude: -122.43539772352648);
+  final _home = WayPoint(name: "Home", latitude: 37.77440680146262, longitude: -122.43539772352648);
 
-  final _store = WayPoint(
-      name: "Store",
-      latitude: 37.76556957793795,
-      longitude: -122.42409811526268);
+  final _store = WayPoint(name: "Store", latitude: 37.76556957793795, longitude: -122.42409811526268);
 
   bool _isMultipleStop = false;
   double? _distanceRemaining, _durationRemaining;
@@ -122,8 +101,16 @@ class _SampleNavigationAppState extends State<SampleNavigationApp> {
                             var wayPoints = <WayPoint>[];
                             wayPoints.add(_home);
                             wayPoints.add(_store);
+                            final options = MapBoxOptions(
+                                mode: MapBoxNavigationMode.driving,
+                                simulateRoute: true,
+                                language: "it",
+                                allowsUTurnAtWayPoints: true,
+                                cellNumberCustomer: '+39123123123',
+                                cellNumberSales: '+39456456456',
+                                units: VoiceUnits.metric);
 
-                            await MapBoxNavigation.instance.startNavigation(wayPoints: wayPoints);
+                            await MapBoxNavigation.instance.startNavigation(wayPoints: wayPoints, options: options);
                           },
                         ),
                         const SizedBox(
@@ -175,20 +162,17 @@ class _SampleNavigationAppState extends State<SampleNavigationApp> {
                           onPressed: _isNavigating
                               ? null
                               : () {
-                            if (_routeBuilt) {
-                              _controller?.clearRoute();
-                            } else {
-                              var wayPoints = <WayPoint>[];
-                              wayPoints.add(_home);
-                              wayPoints.add(_store);
-                              _isMultipleStop = wayPoints.length > 2;
-                              _controller?.buildRoute(
-                                  wayPoints: wayPoints, options: _navigationOption);
-                            }
-                          },
-                          child: Text(_routeBuilt && !_isNavigating
-                              ? "Clear Route"
-                              : "Build Route"),
+                                  if (_routeBuilt) {
+                                    _controller?.clearRoute();
+                                  } else {
+                                    var wayPoints = <WayPoint>[];
+                                    wayPoints.add(_home);
+                                    wayPoints.add(_store);
+                                    _isMultipleStop = wayPoints.length > 2;
+                                    _controller?.buildRoute(wayPoints: wayPoints, options: _navigationOption);
+                                  }
+                                },
+                          child: Text(_routeBuilt && !_isNavigating ? "Clear Route" : "Build Route"),
                         ),
                         const SizedBox(
                           width: 10,
@@ -197,8 +181,8 @@ class _SampleNavigationAppState extends State<SampleNavigationApp> {
                           child: const Text("Start "),
                           onPressed: _routeBuilt && !_isNavigating
                               ? () {
-                            _controller?.startNavigation();
-                          }
+                                  _controller?.startNavigation();
+                                }
                               : null,
                         ),
                         const SizedBox(
@@ -208,8 +192,8 @@ class _SampleNavigationAppState extends State<SampleNavigationApp> {
                           child: const Text("Cancel "),
                           onPressed: _isNavigating
                               ? () {
-                            _controller?.finishNavigation();
-                          }
+                                  _controller?.finishNavigation();
+                                }
                               : null,
                         )
                       ],
@@ -229,34 +213,27 @@ class _SampleNavigationAppState extends State<SampleNavigationApp> {
                       child: Padding(
                         padding: const EdgeInsets.all(10),
                         child: (Text(
-                          _instruction == null
-                              ? "Banner Instruction Here"
-                              : _instruction!,
+                          _instruction == null ? "Banner Instruction Here" : _instruction!,
                           style: const TextStyle(color: Colors.white),
                           textAlign: TextAlign.center,
                         )),
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.only(
-                          left: 20.0, right: 20, top: 20, bottom: 10),
+                      padding: const EdgeInsets.only(left: 20.0, right: 20, top: 20, bottom: 10),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: <Widget>[
                           Row(
                             children: <Widget>[
                               const Text("Duration Remaining: "),
-                              Text(_durationRemaining != null
-                                  ? "${(_durationRemaining! / 60).toStringAsFixed(0)} minutes"
-                                  : "---")
+                              Text(_durationRemaining != null ? "${(_durationRemaining! / 60).toStringAsFixed(0)} minutes" : "---")
                             ],
                           ),
                           Row(
                             children: <Widget>[
                               const Text("Distance Remaining: "),
-                              Text(_distanceRemaining != null
-                                  ? "${(_distanceRemaining! * 0.000621371).toStringAsFixed(1)} miles"
-                                  : "---")
+                              Text(_distanceRemaining != null ? "${(_distanceRemaining! * 0.000621371).toStringAsFixed(1)} miles" : "---")
                             ],
                           ),
                         ],
@@ -274,8 +251,7 @@ class _SampleNavigationAppState extends State<SampleNavigationApp> {
                 child: MapBoxNavigationView(
                     options: _navigationOption,
                     onRouteEvent: _onEmbeddedRouteEvent,
-                    onCreated:
-                        (MapBoxNavigationViewController controller) async {
+                    onCreated: (MapBoxNavigationViewController controller) async {
                       _controller = controller;
                       controller.initialize();
                     }),

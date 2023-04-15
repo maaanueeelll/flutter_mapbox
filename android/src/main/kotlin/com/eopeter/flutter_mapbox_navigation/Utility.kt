@@ -1,13 +1,19 @@
 package com.eopeter.flutter_mapbox_navigation
 
+import android.Manifest
 import android.app.Activity
 import android.app.Application
 import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.content.res.Resources
 import android.location.Location
 import android.os.Bundle
 import android.util.Log
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat.startActivity
+import com.eopeter.flutter_mapbox_navigation.activity.NavigationActivity
 import com.eopeter.flutter_mapbox_navigation.models.MapBoxEvents
 import com.eopeter.flutter_mapbox_navigation.models.MapBoxRouteProgressEvent
 import com.eopeter.flutter_mapbox_navigation.utilities.PluginUtilities
@@ -190,6 +196,8 @@ open class TurnByTurn(
 
     private fun buildRoute(methodCall: MethodCall, result: MethodChannel.Result) {
         // reset status
+        Log.d("TESTING","BUILD ROUTE")
+
         isNavigationCanceled = false
         isNavigationInProgress = false
         // set all options from user provided arguments
@@ -281,6 +289,7 @@ open class TurnByTurn(
         navigationCamera.requestNavigationCameraToOverview()
 
         isBuildingRoute = false
+        Log.d("TESTING","START")
 
         //Start Navigation again from new Point, if it was already in Progress
         if (isNavigationInProgress) {
@@ -299,6 +308,7 @@ open class TurnByTurn(
     private fun startNavigation(methodCall: MethodCall, result: MethodChannel.Result) {
 
         val arguments = methodCall.arguments as? Map<*, *>
+
         if (arguments != null)
             setOptions(arguments)
 
@@ -324,11 +334,17 @@ open class TurnByTurn(
 
     private fun startNavigation() {
         isNavigationCanceled = false
+        Log.d("TESTING","START NAVIGATION")
 
         if (currentRoute != null) {
             if (simulateRoute) {
                 mapboxReplayer.play()
             }
+
+            //intent to start activity
+           //val intent = Intent(activity, NavigationActivity::class.java)
+           //intent.putExtra("cellNumberSales", "1133356677")
+
             mapboxNavigation.startTripSession()
             // move the camera to overview when new route is available
             navigationCamera.requestNavigationCameraToOverview()
@@ -376,6 +392,10 @@ open class TurnByTurn(
         val language = arguments["language"] as? String
         if (language != null)
             navigationLanguage = language
+
+        val cellSales = arguments["numberCellSales"] as? String
+        if (cellSales != null)
+            cellNumberSales = cellSales
 
         val units = arguments["units"] as? String
 
@@ -481,6 +501,8 @@ open class TurnByTurn(
     var simulateRoute = false
     var mapStyleUrlDay: String? = null
     var mapStyleUrlNight: String? = null
+    var cellNumberCustomer: String? = null
+    var cellNumberSales: String? = null
     var navigationLanguage = "en"
     var navigationVoiceUnits = DirectionsCriteria.IMPERIAL
     var zoom = 15.0
@@ -510,6 +532,7 @@ open class TurnByTurn(
     private var isNavigationCanceled = false
 
     val BUTTON_ANIMATION_DURATION = 1500L
+
 
     /**
      * Debug tool used to play, pause and seek route progress events that can be used to produce mocked location updates along the route.
@@ -810,6 +833,9 @@ open class TurnByTurn(
         }
     }
 
+    fun getCellCustomer() :String?{
+        return cellNumberCustomer;
+    }
     override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
         TODO("Not yet implemented")
     }

@@ -5,13 +5,17 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.location.Location
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
+import android.view.View
+import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import com.eopeter.flutter_mapbox_navigation.FlutterMapboxNavigationPlugin
 import com.eopeter.flutter_mapbox_navigation.models.MapBoxEvents
 import com.eopeter.flutter_mapbox_navigation.models.MapBoxRouteProgressEvent
 import com.eopeter.flutter_mapbox_navigation.utilities.PluginUtilities
+import com.eopeter.flutter_mapbox_navigation.TurnByTurn
 import com.eopeter.flutter_mapbox_navigation.utilities.PluginUtilities.Companion.sendEvent
 import com.mapbox.api.directions.v5.models.DirectionsRoute
 import com.mapbox.api.directions.v5.models.RouteOptions
@@ -48,12 +52,30 @@ class NavigationActivity : AppCompatActivity() {
     private var canResetRoute: Boolean = false
     private var accessToken: String? = null
     private var lastLocation: Location? = null
-    private val mapView: MapView? = null
+    var cellNumberCustomer: String? = null
+    var cellNumberSales: String? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setTheme(R.style.Theme_AppCompat_NoActionBar)
         binding = NavigationActivityBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        val buttonCallSales: Button = findViewById(R.id.btn_chiama_agente)
+        val buttonCallCustomer: Button = findViewById(R.id.btn_chiama_cliente)
+        cellNumberCustomer =  intent.getStringExtra("cellNumberCustomer")
+        cellNumberSales =  intent.getStringExtra("cellNumberSales")
+        if (cellNumberSales != null) {
+            buttonCallSales.visibility = View.VISIBLE
+
+        } else {
+            buttonCallSales.visibility = View.INVISIBLE
+        }
+        if (cellNumberCustomer != null) {
+            buttonCallCustomer.visibility = View.VISIBLE
+
+        } else {
+            buttonCallCustomer.visibility = View.INVISIBLE
+        }
 
         accessToken =
             PluginUtilities.getResourceFromContext(this.applicationContext, "mapbox_access_token")
@@ -65,7 +87,6 @@ class NavigationActivity : AppCompatActivity() {
         MapboxNavigationApp
             .setup(navigationOptions)
             .attach(this)
-
 
         if (FlutterMapboxNavigationPlugin.allowsClickToSetDestination) {
             binding.navigationView.registerMapObserver(onMapLongClick)
@@ -119,22 +140,39 @@ class NavigationActivity : AppCompatActivity() {
 
         }
         requestRoutes(points)
+
     }
 
-    override fun onBackPressed() {
-        super.finish()
+
+    /** Called when the user touches the button  */
+    fun callSalesAgent(view: View?) {
+
+        if (cellNumberSales != null) {
+          //  Log.d("TESTING","CALL SALES " + cellNumberSales)
+
+
+            val intent = Intent(Intent.ACTION_CALL, Uri.parse("tel:" + cellNumberSales.toString()))
+            startActivity(intent)
+        }
     }
 
+    fun callCustomer(view: View?) {
+
+        if (cellNumberCustomer != null) {
+           // Log.d("TESTING","CALL CUSTOMER " + cellNumberCustomer)
+            val intent = Intent(Intent.ACTION_CALL, Uri.parse("tel:" + cellNumberCustomer.toString()))
+            startActivity(intent)
+        }
+    }
 
     override fun onDestroy() {
         super.onDestroy()
-
-      //  if (FlutterMapboxNavigationPlugin.allowsClickToSetDestination) {
-      //      binding.navigationView.unregisterMapObserver(onMapLongClick)
-      //  }
-      //  MapboxNavigationApp.current()?.unregisterLocationObserver(locationObserver)
-      //  MapboxNavigationApp.current()?.unregisterRouteProgressObserver(routeProgressObserver)
-      //  MapboxNavigationApp.current()?.unregisterArrivalObserver(arrivalObserver)
+        if (FlutterMapboxNavigationPlugin.allowsClickToSetDestination) {
+            binding.navigationView.unregisterMapObserver(onMapLongClick)
+        }
+        MapboxNavigationApp.current()?.unregisterLocationObserver(locationObserver)
+        MapboxNavigationApp.current()?.unregisterRouteProgressObserver(routeProgressObserver)
+        MapboxNavigationApp.current()?.unregisterArrivalObserver(arrivalObserver)
     }
 
     override fun onStart() {
@@ -143,7 +181,6 @@ class NavigationActivity : AppCompatActivity() {
 
     override fun onStop() {
         super.onStop()
-        super.finish()
     }
 
     private fun requestRoutes(points: List<Point>) {
@@ -159,10 +196,7 @@ class NavigationActivity : AppCompatActivity() {
                 .build(),
             callback = object : NavigationRouterCallback {
                 override fun onCanceled(routeOptions: RouteOptions, routerOrigin: RouterOrigin) {
-
                     sendEvent(MapBoxEvents.ROUTE_BUILD_CANCELLED)
-
-
                 }
 
                 override fun onFailure(reasons: List<RouterFailure>, routeOptions: RouteOptions) {
@@ -240,8 +274,6 @@ class NavigationActivity : AppCompatActivity() {
                 }
 
                 override fun onCanceled(routeOptions: RouteOptions, routerOrigin: RouterOrigin) {
-                    Log.e("TEST","ON CANCELED")
-
                     sendEvent(MapBoxEvents.ROUTE_BUILD_CANCELLED)
                 }
             }
@@ -421,4 +453,6 @@ class WaypointsSet {
         val isFirstWaypoint = index == 0
         return !isLastWaypoint && !isFirstWaypoint
     }
+
+
 }

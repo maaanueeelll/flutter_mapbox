@@ -9,11 +9,11 @@ public class NavigationFactory : NSObject, FlutterStreamHandler
 {
     var _navigationViewController: NavigationViewController? = nil
     var _eventSink: FlutterEventSink? = nil
-
+    
     let ALLOW_ROUTE_SELECTION = false
     let IsMultipleUniqueRoutes = false
     var isEmbeddedNavigation = false
-
+    
     var _distanceRemaining: Double?
     var _durationRemaining: Double?
     var _navigationMode: String?
@@ -21,7 +21,7 @@ public class NavigationFactory : NSObject, FlutterStreamHandler
     var _wayPointOrder = [Int:Waypoint]()
     var _wayPoints = [Waypoint]()
     var _lastKnownLocation: CLLocation?
-
+    
     var _options: NavigationRouteOptions?
     var _simulateRoute = false
     var _allowsUTurnAtWayPoints: Bool?
@@ -30,6 +30,8 @@ public class NavigationFactory : NSObject, FlutterStreamHandler
     var _voiceUnits = "imperial"
     var _mapStyleUrlDay: String?
     var _mapStyleUrlNight: String?
+    var _cellNumberCustomer: String?
+    var _cellNumberSales: String?
     var _zoom: Double = 13.0
     var _tilt: Double = 0.0
     var _bearing: Double = 0.0
@@ -37,7 +39,7 @@ public class NavigationFactory : NSObject, FlutterStreamHandler
     var _longPressDestinationEnabled = true
     var _shouldReRoute = true
     var navigationDirections: Directions?
-
+    
     func addWayPoints(arguments: NSDictionary?, result: @escaping FlutterResult)
     {
         guard let oWayPoints = arguments?["wayPoints"] as? NSDictionary else {return}
@@ -47,7 +49,7 @@ public class NavigationFactory : NSObject, FlutterStreamHandler
             //waypoints must be in the right order
             locations.sort(by: {$0.order ?? 0 < $1.order ?? 0})
         }
-
+        
         var nextIndex = 1
         for loc in locations
         {
@@ -69,32 +71,35 @@ public class NavigationFactory : NSObject, FlutterStreamHandler
     {
         _wayPoints.removeAll()
         _wayPointOrder.removeAll()
-
+        
         guard let oWayPoints = arguments?["wayPoints"] as? NSDictionary else {return}
-
+        
         guard var locations = getLocationsFromWayPointDictionary(waypoints: oWayPoints) else { return }
-
+        
         if(!_isOptimized)
         {
             //waypoints must be in the right order
             locations.sort(by: {$0.order ?? 0 < $1.order ?? 0})
         }
-
-
+        
+        
         for loc in locations
         {
             let location = Waypoint(coordinate: CLLocationCoordinate2D(latitude: loc.latitude!, longitude: loc.longitude!), name: loc.name)
             _wayPoints.append(location)
             _wayPointOrder[loc.order!] = location
         }
-
+        
+        _cellNumberSales = arguments?["cellNumberSales"] as? String ?? _cellNumberSales
+        _cellNumberCustomer = arguments?["cellNumberCustomer"] as? String ?? _cellNumberCustomer
+     
         _language = arguments?["language"] as? String ?? _language
         _voiceUnits = arguments?["units"] as? String ?? _voiceUnits
         _simulateRoute = arguments?["simulateRoute"] as? Bool ?? _simulateRoute
         _isOptimized = arguments?["isOptimized"] as? Bool ?? _isOptimized
         _allowsUTurnAtWayPoints = arguments?["allowsUTurnAtWayPoints"] as? Bool
         _navigationMode = arguments?["mode"] as? String ?? "drivingWithTraffic"
-
+        
         if(_wayPoints.count > 3 && arguments?["mode"] == nil)
         {
             _navigationMode = "driving"
@@ -111,16 +116,16 @@ public class NavigationFactory : NSObject, FlutterStreamHandler
             {
                 startNavigationWithWayPoints(wayPoints: _wayPoints, flutterResult: result, isUpdatingWaypoints: false)
             }
-
+            
         }
     }
-
+    
     func startNavigationWithWayPoints(wayPoints: [Waypoint], flutterResult: @escaping FlutterResult, isUpdatingWaypoints: Bool)
     {
         let simulationMode: SimulationMode = _simulateRoute ? .always : .never
-
+        
         var mode: ProfileIdentifier = .automobileAvoidingTraffic
-
+        
         if (_navigationMode == "cycling")
         {
             mode = .cycling
@@ -133,17 +138,17 @@ public class NavigationFactory : NSObject, FlutterStreamHandler
         {
             mode = .walking
         }
-
+        
         let options = NavigationRouteOptions(waypoints: wayPoints, profileIdentifier: mode)
-
+        
         if (_allowsUTurnAtWayPoints != nil)
         {
             options.allowsUTurnAtWaypoint = _allowsUTurnAtWayPoints!
         }
-
+        
         options.distanceMeasurementSystem = _voiceUnits == "imperial" ? .imperial : .metric
         options.locale = Locale(identifier: _language)
-
+        
         Directions.shared.calculate(options) { [weak self](session, result) in
             guard let strongSelf = self else { return }
             strongSelf._options = options
@@ -159,7 +164,7 @@ public class NavigationFactory : NSObject, FlutterStreamHandler
                     //show map to select a specific route
                     strongSelf._routes = routes
                     let routeOptionsView = RouteOptionsViewController(routes: routes, options: options)
-
+                    
                     let flutterViewController = UIApplication.shared.delegate?.window??.rootViewController as! FlutterViewController
                     flutterViewController.present(routeOptionsView, animated: true, completion: nil)
                 }
@@ -190,23 +195,49 @@ public class NavigationFactory : NSObject, FlutterStreamHandler
                 }
             }
         }
-
+        
     }
-
+    
     func startNavigation(routeResponse: RouteResponse, options: NavigationRouteOptions, navOptions: NavigationOptions)
     {
+        
+        
+        let customerButton = UIButton()
+        customerButton.titleLabel!.lineBreakMode = .byWordWrapping
+        customerButton.titleLabel!.textAlignment = .center
+        customerButton.setTitle("Chiama\ncliente", for: .normal)
+        customerButton.titleLabel?.font = .systemFont(ofSize: 12, weight: .medium)
+        customerButton.backgroundColor = .darkGray
+        customerButton.addTarget(self, action: #selector(self.callCustomer), for: .touchUpInside)
+        
+        let salesButton = UIButton()
+        salesButton.titleLabel!.lineBreakMode = .byWordWrapping
+        salesButton.titleLabel!.textAlignment = .center
+        salesButton.setTitle("Chiama\nagente", for: .normal)
+        salesButton.titleLabel?.font = .systemFont(ofSize: 12, weight: .medium)
+        salesButton.backgroundColor = .darkGray
+        salesButton.addTarget(self, action: #selector(self.callSales), for: .touchUpInside)
+        
+        
+        
         isEmbeddedNavigation = false
         if(self._navigationViewController == nil)
         {
             self._navigationViewController = NavigationViewController(for: routeResponse, routeIndex: 0, routeOptions: options, navigationOptions: navOptions)
             self._navigationViewController!.modalPresentationStyle = .fullScreen
+            if(self._cellNumberSales != nil){
+                self._navigationViewController!.navigationView.floatingButtons?.append(salesButton)
+            }
+            if(self._cellNumberCustomer != nil){
+                self._navigationViewController!.navigationView.floatingButtons?.append(customerButton)
+            }
             self._navigationViewController!.delegate = self
             self._navigationViewController!.navigationMapView!.localizeLabels()
         }
         let flutterViewController = UIApplication.shared.delegate?.window??.rootViewController as! FlutterViewController
         flutterViewController.present(self._navigationViewController!, animated: true, completion: nil)
     }
-
+    
     func continueNavigationWithWayPoints(wayPoints: [Waypoint])
     {
         _options?.waypoints = wayPoints
@@ -222,7 +253,7 @@ public class NavigationFactory : NSObject, FlutterStreamHandler
                 if(routes.count > 1 && strongSelf.ALLOW_ROUTE_SELECTION)
                 {
                     //TODO: show map to select a specific route
-
+                    
                 }
                 else
                 {
@@ -230,9 +261,9 @@ public class NavigationFactory : NSObject, FlutterStreamHandler
                 }
             }
         }
-
+        
     }
-
+    
     func endNavigation(result: FlutterResult?)
     {
         sendEvent(eventType: MapBoxEventType.navigation_finished)
@@ -256,12 +287,12 @@ public class NavigationFactory : NSObject, FlutterStreamHandler
                 })
             }
         }
-
+        
     }
     
     func getLocationsFromWayPointDictionary(waypoints: NSDictionary) -> [Location]? {
         var locations = [Location]()
-
+        
         for item in waypoints as NSDictionary
         {
             let point = item.value as! NSDictionary
@@ -274,79 +305,104 @@ public class NavigationFactory : NSObject, FlutterStreamHandler
         }
         return locations
     }
-
+    
     func getLastKnownLocation() -> Waypoint
     {
         return Waypoint(coordinate: CLLocationCoordinate2D(latitude: _lastKnownLocation!.coordinate.latitude, longitude: _lastKnownLocation!.coordinate.longitude))
     }
-
-
-
+    
+    
+    
     func sendEvent(eventType: MapBoxEventType, data: String = "")
     {
         let routeEvent = MapBoxRouteEvent(eventType: eventType, data: data)
-
+        
         let jsonEncoder = JSONEncoder()
         let jsonData = try! jsonEncoder.encode(routeEvent)
         let eventJson = String(data: jsonData, encoding: String.Encoding.utf8)
         if(_eventSink != nil){
             _eventSink!(eventJson)
         }
-
+        
     }
-
+    
     func downloadOfflineRoute(arguments: NSDictionary?, flutterResult: @escaping FlutterResult)
     {
         /*
-        // Create a directions client and store it as a property on the view controller.
-        self.navigationDirections = NavigationDirections(credentials: Directions.shared.credentials)
-
-        // Fetch available routing tile versions.
-        _ = self.navigationDirections!.fetchAvailableOfflineVersions { (versions, error) in
-            guard let version = versions?.first else { return }
-
-            let coordinateBounds = CoordinateBounds(southWest: CLLocationCoordinate2DMake(0, 0), northEast: CLLocationCoordinate2DMake(1, 1))
-
-            // Download tiles using the most recent version.
-            _ = self.navigationDirections!.downloadTiles(in: coordinateBounds, version: version) { (url, response, error) in
-                guard let url = url else {
-                    flutterResult(false)
-                    preconditionFailure("Unable to locate temporary file.")
-                }
-
-                guard let outputDirectoryURL = Bundle.mapboxCoreNavigation.suggestedTileURL(version: version) else {
-                    flutterResult(false)
-                    preconditionFailure("No suggested tile URL.")
-                }
-                try? FileManager.default.createDirectory(at: outputDirectoryURL, withIntermediateDirectories: true, attributes: nil)
-
-                // Unpack downloaded routing tiles.
-                NavigationDirections.unpackTilePack(at: url, outputDirectoryURL: outputDirectoryURL, progressHandler: { (totalBytes, bytesRemaining) in
-                    // Show unpacking progress.
-                }, completionHandler: { (result, error) in
-                    // Configure the offline router with the output directory where the tiles have been unpacked.
-                    self.navigationDirections!.configureRouter(tilesURL: outputDirectoryURL) { (numberOfTiles) in
-                        // Completed, dismiss UI
-                        flutterResult(true)
-                    }
-                })
-            }
-        }
+         // Create a directions client and store it as a property on the view controller.
+         self.navigationDirections = NavigationDirections(credentials: Directions.shared.credentials)
+         
+         // Fetch available routing tile versions.
+         _ = self.navigationDirections!.fetchAvailableOfflineVersions { (versions, error) in
+         guard let version = versions?.first else { return }
+         
+         let coordinateBounds = CoordinateBounds(southWest: CLLocationCoordinate2DMake(0, 0), northEast: CLLocationCoordinate2DMake(1, 1))
+         
+         // Download tiles using the most recent version.
+         _ = self.navigationDirections!.downloadTiles(in: coordinateBounds, version: version) { (url, response, error) in
+         guard let url = url else {
+         flutterResult(false)
+         preconditionFailure("Unable to locate temporary file.")
+         }
+         
+         guard let outputDirectoryURL = Bundle.mapboxCoreNavigation.suggestedTileURL(version: version) else {
+         flutterResult(false)
+         preconditionFailure("No suggested tile URL.")
+         }
+         try? FileManager.default.createDirectory(at: outputDirectoryURL, withIntermediateDirectories: true, attributes: nil)
+         
+         // Unpack downloaded routing tiles.
+         NavigationDirections.unpackTilePack(at: url, outputDirectoryURL: outputDirectoryURL, progressHandler: { (totalBytes, bytesRemaining) in
+         // Show unpacking progress.
+         }, completionHandler: { (result, error) in
+         // Configure the offline router with the output directory where the tiles have been unpacked.
+         self.navigationDirections!.configureRouter(tilesURL: outputDirectoryURL) { (numberOfTiles) in
+         // Completed, dismiss UI
+         flutterResult(true)
+         }
+         })
+         }
+         }
          */
     }
     
-
-
+    
+    
     //MARK: EventListener Delegates
     public func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
         _eventSink = events
         return nil
     }
-
+    
     public func onCancel(withArguments arguments: Any?) -> FlutterError? {
         _eventSink = nil
         return nil
     }
+    
+    
+    @objc func callSales(sender : UIButton) {
+        let phoneNumber = "tel://" + self._cellNumberSales!
+        if let phoneCallURL = URL(string: phoneNumber) {
+            let application:UIApplication = UIApplication.shared
+            if (application.canOpenURL(phoneCallURL)) {
+                application.open(phoneCallURL, options: [:], completionHandler: nil)
+            }
+        }
+    }
+    
+    
+    
+    @objc func callCustomer(sender : UIButton) {
+        let phoneNumber = "tel://" + self._cellNumberCustomer!
+         if let phoneCallURL = URL(string: phoneNumber) {
+            let application:UIApplication = UIApplication.shared
+            if (application.canOpenURL(phoneCallURL)) {
+                application.open(phoneCallURL, options: [:], completionHandler: nil)
+            }
+        }
+        
+    }
+    
 }
 
 
@@ -361,20 +417,20 @@ extension NavigationFactory : NavigationViewControllerDelegate {
         if(_eventSink != nil)
         {
             let jsonEncoder = JSONEncoder()
-
+            
             let progressEvent = MapBoxRouteProgressEvent(progress: progress)
             let progressEventJsonData = try! jsonEncoder.encode(progressEvent)
             let progressEventJson = String(data: progressEventJsonData, encoding: String.Encoding.ascii)
-
+            
             _eventSink!(progressEventJson)
-
+            
             if(progress.isFinalLeg && progress.currentLegProgress.userHasArrivedAtWaypoint)
             {
                 _eventSink = nil
             }
         }
     }
-
+    
     public func navigationViewController(_ navigationViewController: NavigationViewController, didArriveAt waypoint: Waypoint) -> Bool {
         sendEvent(eventType: MapBoxEventType.on_arrival, data: "true")
         if(!_wayPoints.isEmpty && IsMultipleUniqueRoutes)
@@ -382,12 +438,12 @@ extension NavigationFactory : NavigationViewControllerDelegate {
             continueNavigationWithWayPoints(wayPoints: [getLastKnownLocation(), _wayPoints.remove(at: 0)])
             return false
         }
-
+        
         return true
     }
-
-
-
+    
+    
+    
     public func navigationViewControllerDidDismiss(_ navigationViewController: NavigationViewController, byCanceling canceled: Bool) {
         if(canceled)
         {

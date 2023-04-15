@@ -32,6 +32,6 @@ class CustomDayStyle: DayStyle {
     override func apply() {
         super.apply()
         // Begin styling the UI
-        //BottomBannerView.appearance().backgroundColor = .orange
+        BottomBannerView.appearance().backgroundColor = .orange
     }
 }

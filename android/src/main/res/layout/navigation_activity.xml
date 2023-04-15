@@ -5,4 +5,38 @@
     android:layout_height="match_parent"
     app:accessToken="@string/mapbox_access_token"
     xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:orientation="vertical"
+        android:gravity="center" >
+
+        <!-- Button centering in screen -->
+        <Button
+            android:id="@+id/btn_chiama_cliente"
+            android:layout_width="70sp"
+            android:layout_height="50sp"
+            android:layout_gravity="right"
+            android:layout_marginTop="100dp"
+            android:layout_marginRight="8dp"
+            android:background="@drawable/rounded_button"
+            android:onClick="callCustomer"
+            android:padding="6dp"
+            android:text="chiama&#10;cliente"
+            android:textColor="#292727"
+            android:textSize="12sp" />
+        <Button
+            android:id="@+id/btn_chiama_agente"
+            android:layout_width="70sp"
+            android:layout_height="50sp"
+            android:layout_gravity="right"
+            android:layout_margin="8dp"
+            android:background="@drawable/rounded_button"
+            android:onClick="callSalesAgent"
+            android:padding="6dp"
+            android:text="chiama&#10;agente"
+            android:textColor="#292727"
+            android:textSize="12sp" />
+    </LinearLayout>
 </com.mapbox.navigation.dropin.NavigationView>

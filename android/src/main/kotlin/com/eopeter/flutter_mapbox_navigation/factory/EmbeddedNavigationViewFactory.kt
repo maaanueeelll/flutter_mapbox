@@ -9,7 +9,6 @@ import com.eopeter.flutter_mapbox_navigation.models.views.EmbeddedView
 import com.eopeter.flutter_mapbox_navigation.models.views.NativeView
 import eopeter.flutter_mapbox_navigation.R
 import eopeter.flutter_mapbox_navigation.databinding.NavigationActivityBinding
-import eopeter.flutter_mapbox_navigation.databinding.ComponentsNavigationActivityBinding
 
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.StandardMessageCodec

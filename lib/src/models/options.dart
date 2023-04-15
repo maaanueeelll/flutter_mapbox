@@ -61,6 +61,10 @@ class MapBoxOptions {
   /// The Url of the style the Navigation MapView should use at night
   String? mapStyleUrlNight;
 
+  String? cellNumberCustomer;
+
+  String? cellNumberSales;
+
   /// if true, will reorder the routes to optimize navigation for time and shortest distance using the Travelling Salesman Algorithm. Always false for now
   bool? isOptimized;
 
@@ -96,6 +100,8 @@ class MapBoxOptions {
       this.isOptimized,
       this.mapStyleUrlDay,
       this.mapStyleUrlNight,
+      this.cellNumberCustomer,
+      this.cellNumberSales,
       this.enableFreeDriveMode,
       this.padding,
       this.animateBuildRoute});
@@ -107,6 +113,9 @@ class MapBoxOptions {
         optionsMap[fieldName] = value;
       }
     }
+
+    addIfNonNull("cellNumberCustomer", cellNumberCustomer);
+    addIfNonNull("cellNumberSales", cellNumberSales);
 
     addIfNonNull("initialLatitude", initialLatitude);
     addIfNonNull("initialLongitude", initialLongitude);
@@ -153,15 +162,14 @@ class MapBoxOptions {
       padding?.bottom,
       padding?.right,
     ]);
-
+    print("----- OPTION MAPS --------");
+    print(optionsMap.toString());
     return optionsMap;
   }
 
   Map<String, dynamic> updatesMap(MapBoxOptions newOptions) {
     final Map<String, dynamic> prevOptionsMap = toMap();
 
-    return newOptions.toMap()
-      ..removeWhere(
-          (String key, dynamic value) => prevOptionsMap[key] == value);
+    return newOptions.toMap()..removeWhere((String key, dynamic value) => prevOptionsMap[key] == value);
   }
 }

@@ -5,7 +5,6 @@ import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
-import android.util.Log
 import com.eopeter.flutter_mapbox_navigation.activity.NavigationLauncher
 import com.eopeter.flutter_mapbox_navigation.factory.EmbeddedNavigationViewFactory
 
@@ -74,6 +73,8 @@ public class FlutterMapboxNavigationPlugin : FlutterPlugin, MethodCallHandler,
         var durationRemaining: Double? = null
         var platformViewRegistry: PlatformViewRegistry? = null
         var binaryMessenger: BinaryMessenger? = null
+        var cellNumberSales: String? = null
+        var cellNumberCustomer: String? = null
 
         var viewId = "FlutterMapboxNavigationView"
     }
@@ -83,24 +84,31 @@ public class FlutterMapboxNavigationPlugin : FlutterPlugin, MethodCallHandler,
             "getPlatformVersion" -> {
                 result.success("Android ${Build.VERSION.RELEASE}")
             }
+
             "getDistanceRemaining" -> {
                 result.success(distanceRemaining);
             }
+
             "getDurationRemaining" -> {
                 result.success(durationRemaining);
             }
+
             "startNavigation" -> {
                 checkPermissionAndBeginNavigation(call)
             }
+
             "addWayPoints" -> {
                 addWayPointsToNavigation(call, result)
             }
+
             "finishNavigation" -> {
                 NavigationLauncher.stopNavigation(currentActivity)
             }
+
             "enableOfflineRouting" -> {
                 downloadRegionForOfflineRouting(call, result)
             }
+
             else -> result.notImplemented()
         }
     }
@@ -124,6 +132,18 @@ public class FlutterMapboxNavigationPlugin : FlutterPlugin, MethodCallHandler,
                 "cycling" -> navigationMode = DirectionsCriteria.PROFILE_CYCLING
                 "driving" -> navigationMode = DirectionsCriteria.PROFILE_DRIVING
             };
+        }
+
+        val cellSales = arguments?.get("cellNumberSales") as? String
+        if (cellSales != null) {
+            cellNumberSales = cellSales
+
+        }
+
+        val cellCustomer = arguments?.get("cellNumberCustomer") as? String
+        if (cellCustomer != null) {
+            cellNumberCustomer = cellCustomer
+
         }
 
         val alternateRoutes = arguments?.get("alternatives") as? Boolean
@@ -189,7 +209,7 @@ public class FlutterMapboxNavigationPlugin : FlutterPlugin, MethodCallHandler,
     }
 
     private fun beginNavigation(wayPoints: List<Point>) {
-        NavigationLauncher.startNavigation(currentActivity, wayPoints);
+        NavigationLauncher.startNavigation(currentActivity, wayPoints, cellNumberCustomer, cellNumberSales);
     }
 
     private fun addWayPointsToNavigation(
