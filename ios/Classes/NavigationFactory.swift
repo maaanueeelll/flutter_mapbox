@@ -90,8 +90,8 @@ public class NavigationFactory : NSObject, FlutterStreamHandler
             _wayPointOrder[loc.order!] = location
         }
         
-        _cellNumberSales = arguments?["cellNumberSales"] as? String ?? _cellNumberSales
-        _cellNumberCustomer = arguments?["cellNumberCustomer"] as? String ?? _cellNumberCustomer
+        _cellNumberSales = arguments?["cellNumberSales"] as? String ?? ""
+        _cellNumberCustomer = arguments?["cellNumberCustomer"] as? String ?? ""
      
         _language = arguments?["language"] as? String ?? _language
         _voiceUnits = arguments?["units"] as? String ?? _voiceUnits
@@ -218,21 +218,20 @@ public class NavigationFactory : NSObject, FlutterStreamHandler
         salesButton.backgroundColor = .darkGray
         salesButton.addTarget(self, action: #selector(self.callSales), for: .touchUpInside)
         
-        
-        
         isEmbeddedNavigation = false
         if(self._navigationViewController == nil)
         {
             self._navigationViewController = NavigationViewController(for: routeResponse, routeIndex: 0, routeOptions: options, navigationOptions: navOptions)
             self._navigationViewController!.modalPresentationStyle = .fullScreen
-            if(self._cellNumberSales != nil){
-                self._navigationViewController!.navigationView.floatingButtons?.append(salesButton)
-            }
-            if(self._cellNumberCustomer != nil){
-                self._navigationViewController!.navigationView.floatingButtons?.append(customerButton)
-            }
+            
             self._navigationViewController!.delegate = self
             self._navigationViewController!.navigationMapView!.localizeLabels()
+        }
+        if(self._cellNumberSales != ""){
+            self._navigationViewController!.navigationView.floatingButtons?.append(salesButton)
+        }
+        if(self._cellNumberCustomer != ""){
+            self._navigationViewController!.navigationView.floatingButtons?.append(customerButton)
         }
         let flutterViewController = UIApplication.shared.delegate?.window??.rootViewController as! FlutterViewController
         flutterViewController.present(self._navigationViewController!, animated: true, completion: nil)
